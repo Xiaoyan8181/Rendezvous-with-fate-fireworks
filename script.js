@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { // 稍微延遲以確保動畫重置
             const effects = calculateEffects(currentGems);
             if (effects.length === 0) {
-                effectDisplay.innerHTML = '沒有寶石組合效果。';
+                effectDisplay.innerHTML = '無效果';
             } else {
                 effectDisplay.innerHTML = effects.map(effectData => {
                     const { text, prefixColorClass } = effectData;
