@@ -279,24 +279,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const [gem1, gem2] = Object.keys(gemCounts).sort(); // 排序確保順序一致
                 effects.push({ text: '【二重幻華】', prefixColorClass: 'effect-name-green' });
 
-                const combination = gem1 + gem2;
+                const combination = gem1 + gem2; // 這裡的 combination 已經是排序後的組合
+
                 switch (combination) {
-                    case 'RB': // 2R2B
+                    case 'RB': // 2R2B (R, B 排序後仍是 RB)
                         effects.push({ text: '我方全體【爆炸物】/【機械單位】造成的傷害提高50%', prefixColorClass: 'effect-description-white' });
                         break;
-                    case 'RP': // 2R2P
+                    case 'RP': // 2R2P (R, P 排序後仍是 RP)
                         effects.push({ text: '我方全體造成的最終傷害提高25%', prefixColorClass: 'effect-description-white' });
                         break;
-                    case 'RY': // 2R2Y
+                    case 'RY': // 2R2Y (R, Y 排序後仍是 RY)
                         effects.push({ text: '每10秒觸發1次，從牌庫或棄牌區將1張紅卡加入手牌', prefixColorClass: 'effect-description-white' });
                         break;
-                    case 'YB': // 2Y2B
+                    case 'BY': // 2Y2B (B, Y 排序後是 BY) - 已修正
                         effects.push({ text: '每10秒觸發1次，從牌庫或棄牌區將1張藍卡加入手牌', prefixColorClass: 'effect-description-white' });
                         break;
-                    case 'YP': // 2Y2P
+                    case 'PY': // 2Y2P (P, Y 排序後是 PY) - 已修正
                         effects.push({ text: '手牌補充冷卻時間縮短1秒', prefixColorClass: 'effect-description-white' });
                         break;
-                    case 'BP': // 2B2P
+                    case 'BP': // 2B2P (B, P 排序後仍是 BP)
                         effects.push({ text: '我方全體受到的最終傷害降低25%', prefixColorClass: 'effect-description-white' });
                         break;
                 }
