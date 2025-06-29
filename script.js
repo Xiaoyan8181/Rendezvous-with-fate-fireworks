@@ -103,30 +103,40 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { // 稍微延遲以確保動畫重置
             const effects = calculateEffects(currentGems);
             if (effects.length === 0) {
-                effectDisplay.innerHTML = '無效果';
+                effectDisplay.innerHTML = '沒有寶石組合效果。';
             } else {
                 effectDisplay.innerHTML = effects.map(effectData => {
                     const { text, prefixColorClass } = effectData;
-                    const match = text.match(/^【(.*?)】(.*)$/); // 嘗試匹配【名稱】描述的格式
+                    // 統一解析格式：【名稱】描述 或 【名稱】 (如果沒有描述)
+                    const match = text.match(/^【([^】]+?)】(.*)$/);
+                    let name = '';
+                    let description = '';
+                    let nameHtml = '';
+                    let descriptionHtml = '';
+
                     if (match) {
-                        const name = match[1];
-                        const description = match[2];
-                        let nameClass = 'effect-name-green'; // 預設組合名稱為綠色
+                        name = match[1]; // 提取括號內的名稱
+                        description = match[2]; // 提取括號後的描述
 
                         // 未滿4個寶石的單一效果名稱，使用動態前綴顏色
                         if (['血盟', '窺兆', '靜域', '幽冥'].includes(name)) {
-                             return `<span class="${prefixColorClass}">【${name}】</span><span class="effect-description-white">${applyTermColors(description)}</span>`;
+                             nameHtml = `<span class="${prefixColorClass}">【${name}】</span>`;
+                        } else {
+                            // 其他滿4個寶石的組合名稱維持綠色
+                            nameHtml = `<span class="effect-name-green">【${name}】</span>`;
                         }
-                        // 其他滿4個寶石的組合名稱維持綠色
-                        return `<span class="${nameClass}">【${name}】</span><span class="effect-description-white">${applyTermColors(description)}</span>`;
+                        descriptionHtml = `<span class="effect-description-white">${applyTermColors(description)}</span>`;
+
+                        return nameHtml + descriptionHtml;
+
                     } else if (text.startsWith('【') && text.endsWith('】')) {
-                        // 這是單純的組合名稱，例如【極彩輝煌】
+                        // 這是單純的組合名稱，例如【極彩輝煌】或【月映星輝】，沒有後續描述
                         return `<span class="effect-name-green">${text}</span>`;
                     } else {
-                        // 這是純描述
+                        // 理論上這個分支不應該再被觸發，因為所有效果都應該有【】前綴或被併入前一個
                         return `<span class="effect-description-white">${applyTermColors(text)}</span>`;
                     }
-                }).join('<br>');
+                }).join('<br>'); // 每個效果之間用 <br> 分隔
             }
             effectDisplay.classList.add('show');
         }, 100); // 短暫延遲
@@ -145,160 +155,166 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (numFilled < 4) {
             // 寶石未滿4個，疊加處理
-            const pushEffect = (gemType, baseText, valueKey, baseValue) => {
+            const pushEffect = (gemType, baseName, baseDescription, valueKey, baseValue) => {
                 if (gemCounts[gemType]) {
-                    let effectText = baseText;
+                    let currentDescription = baseDescription;
                     let currentValue = baseValue * gemCounts[gemType];
                     let prefixColorClass = 'effect-prefix-white';
 
                     if (gemCounts[gemType] === 2) {
                         prefixColorClass = 'effect-prefix-green';
-                    } else if (gemCounts[gemType] >= 3) { // 3次及以上都是橙色
+                    } else if (gemCounts[gemType] >= 3) {
                         prefixColorClass = 'effect-prefix-orange';
                     }
 
                     if (valueKey === 'damage') {
-                        effectText = baseText.replace('10%', `${currentValue}%`);
+                        currentDescription = baseDescription.replace('10%', `${currentValue}%`);
                     } else if (valueKey === 'cost') {
-                        // 確保 0.33 * 2 = 0.66，而不是 0.6600000000000001
                         currentValue = Math.round(currentValue * 100) / 100;
-                        effectText = baseText.replace('0.33', `${currentValue}`);
+                        currentDescription = baseDescription.replace('0.33', `${currentValue}`);
                     } else if (valueKey === 'heal') {
-                        effectText = baseText.replace('5%', `${currentValue}%`);
+                        currentDescription = baseDescription.replace('5%', `${currentValue}%`);
                     }
 
-                    effects.push({ text: effectText, prefixColorClass });
+                    // 確保返回的文本是 【名稱】描述 的統一格式
+                    effects.push({ text: `【${baseName}】${currentDescription}`, prefixColorClass });
                 }
             };
 
-            pushEffect('R', '【血盟】所有紅卡傷害提高10%', 'damage', 10);
-            pushEffect('Y', '【窺兆】打出黃卡後，獲得0.33點費用', 'cost', 0.33);
-            pushEffect('B', '【靜域】打出藍卡後，回復生命值最低的1名我方5%生命值', 'heal', 5);
-            pushEffect('P', '【幽冥】所有紫卡傷害提高10%', 'damage', 10);
+            pushEffect('R', '血盟', '所有紅卡傷害提高10%', 'damage', 10);
+            pushEffect('Y', '窺兆', '打出黃卡後，獲得0.33點費用', 'cost', 0.33);
+            pushEffect('B', '靜域', '打出藍卡後，回復生命值最低的1名我方5%生命值', 'heal', 5);
+            pushEffect('P', '幽冥', '所有紫卡傷害提高10%', 'damage', 10);
 
         } else {
             // 寶石滿4個
             const uniqueGemTypes = Object.keys(gemCounts).length;
-            const sortedCounts = Object.values(gemCounts).sort((a, b) => b - a); // 降序排列數量
+            const sortedCounts = Object.values(gemCounts).sort((a, b) => b - a);
+
+            // 輔助函式，統一推送格式
+            const addCombinationEffect = (name, description = '') => {
+                // 如果是第二行的描述，name會是空字串，我們不加【】
+                const displayText = name ? `【${name}】${description}` : description;
+                effects.push({ text: displayText, prefixColorClass: 'effect-name-green' });
+            };
 
             if (uniqueGemTypes === 4) {
                 // 4色各1
-                effects.push({ text: '【皇家聖焰】我方全體所有機率觸發機制機率+10%', prefixColorClass: 'effect-name-green' });
+                addCombinationEffect('皇家聖焰', '我方全體所有機率觸發機制機率+10%');
             } else if (uniqueGemTypes === 1) {
                 // 4個同色
                 const type = filledGems[0];
-                effects.push({ text: '【極彩輝煌】', prefixColorClass: 'effect-name-green' });
-                if (type === 'R') effects.push({ text: '所有紅卡所需費用-1', prefixColorClass: 'effect-description-white' });
-                else if (type === 'Y') effects.push({ text: '手牌上限+3張', prefixColorClass: 'effect-description-white' });
-                else if (type === 'B') effects.push({ text: '打出藍卡後，我方全體攻擊力+0.5%，上限50%', prefixColorClass: 'effect-description-white' });
-                else if (type === 'P') effects.push({ text: '所有紫卡所需費用-1', prefixColorClass: 'effect-description-white' });
+                addCombinationEffect('極彩輝煌'); // 主名稱，無描述
+                if (type === 'R') addCombinationEffect('', '所有紅卡所需費用-1'); // 描述
+                else if (type === 'Y') addCombinationEffect('', '手牌上限+3張');
+                else if (type === 'B') addCombinationEffect('', '打出藍卡後，我方全體攻擊力+0.5%，上限50%');
+                else if (type === 'P') addCombinationEffect('', '所有紫卡所需費用-1');
             } else if (uniqueGemTypes === 2 && sortedCounts[0] === 3) {
                 // 3個同色1個不同色
                 const threeGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 3);
                 const oneGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 1);
-                effects.push({ text: '【月映星輝】', prefixColorClass: 'effect-name-green' });
+                addCombinationEffect('月映星輝'); // 主名稱，無描述
 
                 if (threeGem === 'R') {
-                    if (oneGem === 'Y') effects.push({ text: '我方全體造成的燃燒傷害提高33%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'B') effects.push({ text: '我方全體造成的物理傷害提高33%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'P') effects.push({ text: '我方全體造成的混響傷害提高33%', prefixColorClass: 'effect-description-white' });
+                    if (oneGem === 'Y') addCombinationEffect('', '我方全體造成的燃燒傷害提高33%');
+                    else if (oneGem === 'B') addCombinationEffect('', '我方全體造成的物理傷害提高33%');
+                    else if (oneGem === 'P') addCombinationEffect('', '我方全體造成的混響傷害提高33%');
                 } else if (threeGem === 'Y') {
-                    if (oneGem === 'R') effects.push({ text: '我方全體造成的電磁傷害提高33%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'B') effects.push({ text: '我方全體造成的負能傷害提高33%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'P') effects.push({ text: '每秒獲得0.33費用', prefixColorClass: 'effect-description-white' });
+                    if (oneGem === 'R') addCombinationEffect('', '我方全體造成的電磁傷害提高33%');
+                    else if (oneGem === 'B') addCombinationEffect('', '我方全體造成的負能傷害提高33%');
+                    else if (oneGem === 'P') addCombinationEffect('', '每秒獲得0.33費用');
                 } else if (threeGem === 'B') {
-                    if (oneGem === 'R') effects.push({ text: '我方全體造成的冰凍傷害提高33%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'Y') effects.push({ text: '所有藍卡所需費用-2', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'P') effects.push({ text: '打出藍卡後，我方全體防禦力+0.5%，上限50%', prefixColorClass: 'effect-description-white' });
+                    if (oneGem === 'R') addCombinationEffect('', '我方全體造成的冰凍傷害提高33%');
+                    else if (oneGem === 'Y') addCombinationEffect('', '所有藍卡所需費用-2');
+                    else if (oneGem === 'P') addCombinationEffect('', '打出藍卡後，我方全體防禦力+0.5%，上限50%');
                 } else if (threeGem === 'P') {
-                    if (oneGem === 'R') effects.push({ text: '【暗藝】/【至暗時刻】傷害提高50%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'Y') effects.push({ text: '我方全體【使魔】造成的傷害提高50%', prefixColorClass: 'effect-description-white' });
-                    else if (oneGem === 'B') effects.push({ text: '【新星】/【元素新星】/【超新星】傷害提高50%', prefixColorClass: 'effect-description-white' });
+                    if (oneGem === 'R') addCombinationEffect('', '【暗藝】/【至暗時刻】傷害提高50%');
+                    else if (oneGem === 'Y') addCombinationEffect('', '我方全體【使魔】造成的傷害提高50%');
+                    else if (oneGem === 'B') addCombinationEffect('', '【新星】/【元素新星】/【超新星】傷害提高50%');
                 }
             } else if (uniqueGemTypes === 3 && sortedCounts[0] === 2) {
                 // 2個同色剩下2個皆不同色 (2+1+1)
                 const twoGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 2);
-                const oneGems = Object.keys(gemCounts).filter(gem => gemCounts[gem] === 1).sort(); // 排序確保順序一致
-                effects.push({ text: '【星屑幽光】', prefixColorClass: 'effect-name-green' });
+                const oneGems = Object.keys(gemCounts).filter(gem => gemCounts[gem] === 1).sort();
+                addCombinationEffect('星屑幽光'); // 主名稱，無描述
 
                 const combination = twoGem + oneGems.join('');
 
                 switch (combination) {
                     case 'RBY':
                     case 'RYB':
-                        effects.push({ text: '我方全體【普通攻擊】傷害提高50%', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【普通攻擊】傷害提高50%');
                         break;
                     case 'RPY':
                     case 'RYP':
-                        effects.push({ text: '我方全體【普通攻擊】有15%機率觸發【點燃】', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【點燃】');
                         break;
                     case 'RBP':
                     case 'RPB':
-                        effects.push({ text: '對處於【凍結】/【冰封】狀態下的敵方，【斬裂】額外觸發1次', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '對處於【凍結】/【冰封】狀態下的敵方，【斬裂】額外觸發1次');
                         break;
                     case 'YRB':
                     case 'YBR':
-                        effects.push({ text: '我方全體5費及以上的技能牌所需費用-2', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體5費及以上的技能牌所需費用-2');
                         break;
                     case 'YRP':
                     case 'YPR':
-                        effects.push({ text: '我方全體【普通攻擊】有15%機率觸發【引雷】', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【引雷】');
                         break;
                     case 'YBP':
                     case 'YPB':
-                        effects.push({ text: '我方全體【霸體】/【隱形】/【無敵】的持續時間延長2秒', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【霸體】/【隱形】/【無敵】的持續時間延長2秒');
                         break;
                     case 'BRY':
                     case 'BYR':
-                        effects.push({ text: '我方【護盾】的持續時間延長20秒', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方【護盾】的持續時間延長20秒');
                         break;
                     case 'BRP':
                     case 'BPR':
-                        effects.push({ text: '我方全體【普通攻擊】有15%機率觸發【凍結】', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【凍結】');
                         break;
                     case 'BYP':
                     case 'BPY':
-                        effects.push({ text: '我方【護盾】消失或引爆時，回復持有者15%生命值', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方【護盾】消失或引爆時，回復持有者15%生命值');
                         break;
                     case 'PRY':
                     case 'PYR':
-                        effects.push({ text: '我方全體【波】/【蝕滅】/【裂蝕】造成的傷害提高50%', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體【波】/【蝕滅】/【裂蝕】造成的傷害提高50%');
                         break;
                     case 'PRB':
                     case 'PBR':
-                        effects.push({ text: '我方全體免疫【混亂】/【束縛】/【禁錮】/【詛咒】/【昏睡】/【變萌】', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '我方全體免疫【混亂】/【束縛】/【禁錮】/【詛咒】/【昏睡】/【變萌】');
                         break;
                     case 'PYB':
                     case 'PBY':
-                        effects.push({ text: '【棄牌】指令冷卻時間縮短5秒', prefixColorClass: 'effect-description-white' });
+                        addCombinationEffect('', '【棄牌】指令冷卻時間縮短5秒');
                         break;
                 }
 
             } else if (uniqueGemTypes === 2 && sortedCounts[0] === 2 && sortedCounts[1] === 2) {
                 // 2組同色 (2+2)
-                const [gem1, gem2] = Object.keys(gemCounts).sort(); // 排序確保順序一致
-                effects.push({ text: '【二重幻華】', prefixColorClass: 'effect-name-green' });
+                const [gem1, gem2] = Object.keys(gemCounts).sort(); // 確保字母順序
+                addCombinationEffect('二重幻華'); // 主名稱，無描述
 
-                const combination = gem1 + gem2; // 這裡的 combination 已經是排序後的組合
-
+                const combination = gem1 + gem2; // ombination 總是按字母順序
                 switch (combination) {
-                    case 'RB': // 2R2B (R, B 排序後仍是 RB)
-                        effects.push({ text: '我方全體【爆炸物】/【機械單位】造成的傷害提高50%', prefixColorClass: 'effect-description-white' });
+                    case 'BR':
+                        addCombinationEffect('', '我方全體【爆炸物】/【機械單位】造成的傷害提高50%');
                         break;
-                    case 'RP': // 2R2P (R, P 排序後仍是 RP)
-                        effects.push({ text: '我方全體造成的最終傷害提高25%', prefixColorClass: 'effect-description-white' });
+                    case 'PR':
+                        addCombinationEffect('', '我方全體造成的最終傷害提高25%');
                         break;
-                    case 'RY': // 2R2Y (R, Y 排序後仍是 RY)
-                        effects.push({ text: '每10秒觸發1次，從牌庫或棄牌區將1張紅卡加入手牌', prefixColorClass: 'effect-description-white' });
+                    case 'RY':
+                        addCombinationEffect('', '每10秒觸發1次，從牌庫或棄牌區將1張紅卡加入手牌');
                         break;
-                    case 'BY': // 2Y2B (B, Y 排序後是 BY) - 已修正
-                        effects.push({ text: '每10秒觸發1次，從牌庫或棄牌區將1張藍卡加入手牌', prefixColorClass: 'effect-description-white' });
+                    case 'BY':
+                        addCombinationEffect('', '每10秒觸發1次，從牌庫或棄牌區將1張藍卡加入手牌');
                         break;
-                    case 'PY': // 2Y2P (P, Y 排序後是 PY) - 已修正
-                        effects.push({ text: '手牌補充冷卻時間縮短1秒', prefixColorClass: 'effect-description-white' });
+                    case 'PY':
+                        addCombinationEffect('', '手牌補充冷卻時間縮短1秒');
                         break;
-                    case 'BP': // 2B2P (B, P 排序後仍是 BP)
-                        effects.push({ text: '我方全體受到的最終傷害降低25%', prefixColorClass: 'effect-description-white' });
+                    case 'BP':
+                        addCombinationEffect('', '我方全體受到的最終傷害降低25%');
                         break;
                 }
             }
