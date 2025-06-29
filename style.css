@@ -1,0 +1,142 @@
+body {
+    background-color: #000; /* 黑色背景 */
+    color: #fff; /* 白色文字 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #1a1a1a;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    text-align: center;
+    width: 100%;
+    max-width: 800px;
+}
+
+.gem-slots-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 40px;
+    min-height: 120px; /* 確保有足夠的高度，即使沒有寶石 */
+    align-items: center;
+}
+
+.gem-slot {
+    width: 100px;
+    height: 100px;
+    border: 3px dashed #666;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #333;
+    cursor: pointer;
+    overflow: hidden; /* 防止圖片溢出 */
+}
+
+.gem-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 保持圖片比例 */
+    transition: transform 0.2s ease-in-out;
+}
+
+.gem-slot img:hover {
+    transform: scale(1.05);
+}
+
+.gem-selection {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.gem-option {
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    transition: border-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.gem-option:hover {
+    border-color: #00ffff;
+    transform: translateY(-5px);
+}
+
+.effect-display-container {
+    min-height: 150px; /* 確保顯示區域足夠，避免內容跳動 */
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    text-align: left;
+    overflow: auto; /* 如果內容過多可以滾動 */
+}
+
+.effect-text {
+    font-size: 1.2em;
+    line-height: 1.8;
+    opacity: 0; /* 初始不可見 */
+    transition: opacity 1.5s ease-in-out; /* 漸入動畫 */
+}
+
+.effect-text.show {
+    opacity: 1; /* 顯示時透明度為1 */
+}
+
+/* 寶石組合名稱顏色 */
+.effect-name-green {
+    color: #00ff00; /* 組合名稱為綠色 */
+}
+
+.effect-name-white {
+    color: #ffffff; /* 單一寶石效果名稱為白色 */
+}
+
+/* 疊加次數前綴顏色 */
+.effect-prefix-white {
+    color: #ffffff; /* 預設白色 (1次疊加) */
+}
+
+.effect-prefix-green {
+    color: #00ff00; /* 綠色 (2次疊加) */
+}
+
+.effect-prefix-orange {
+    color: #ffa500; /* 橙色 (3次疊加) */
+}
+
+/* 效果描述文字顏色 */
+.effect-description-white {
+    color: #ffffff; /* 描述文字為白色 */
+}
+
+/* 詞條顏色 */
+.term-red {
+    color: #ff3333; /* 紅色詞條 */
+}
+
+.term-yellow {
+    color: #ffff33; /* 黃色詞條 */
+}
+
+.term-blue {
+    color: #3399ff; /* 藍色詞條 */
+}
+
+.term-purple {
+    color: #9933ff; /* 紫色詞條 */
+}
