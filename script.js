@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 addCombinationEffect('月映星輝'); // 主名稱，無描述
 
                 if (threeGem === 'R') {
-                    if (oneGem === 'Y') addCombinationEffect('', '我方全體造成的燃燒傷害提高33%');
+                    if (oneGem === 'Y') addCombinationEffect('', '我方全體造成的火焰傷害提高33%');
                     else if (oneGem === 'B') addCombinationEffect('', '我方全體造成的物理傷害提高33%');
                     else if (oneGem === 'P') addCombinationEffect('', '我方全體造成的混響傷害提高33%');
                 } else if (threeGem === 'Y') {
