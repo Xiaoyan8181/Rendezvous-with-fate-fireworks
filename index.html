@@ -8,20 +8,41 @@
 </head>
 <body>
     <div class="container">
-        <div class="gem-slots-container">
-            <div class="gem-slot" data-index="0"></div>
-            <div class="gem-slot" data-index="1"></div>
-            <div class="gem-slot" data-index="2"></div>
-            <div class="gem-slot" data-index="3"></div>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="combination-query">組合查詢</button>
+            <button class="tab-button" data-tab="unrecorded">未記錄</button>
+            <button class="tab-button" data-tab="recorded">已記錄</button>
         </div>
-        <div class="gem-selection">
-            <img src="images/R.png" alt="紅寶石" class="gem-option" data-gem="R">
-            <img src="images/Y.png" alt="黃寶石" class="gem-option" data-gem="Y">
-            <img src="images/B.png" alt="藍寶石" class="gem-option" data-gem="B">
-            <img src="images/P.png" alt="紫寶石" class="gem-option" data-gem="P">
+
+        <div id="combination-query" class="tab-content active">
+            <div class="gem-slots-container">
+                <div class="gem-slot" data-index="0"></div>
+                <div class="gem-slot" data-index="1"></div>
+                <div class="gem-slot" data-index="2"></div>
+                <div class="gem-slot" data-index="3"></div>
+            </div>
+            <div class="gem-selection">
+                <img src="images/R.png" alt="紅寶石" class="gem-option" data-gem="R">
+                <img src="images/Y.png" alt="黃寶石" class="gem-option" data-gem="Y">
+                <img src="images/B.png" alt="藍寶石" class="gem-option" data-gem="B">
+                <img src="images/P.png" alt="紫寶石" class="gem-option" data-gem="P">
+            </div>
+            <div class="effect-display-container">
+                <div id="effect-display" class="effect-text"></div>
+            </div>
+            <button id="record-combination-btn" class="record-button" style="display: none;"></button>
         </div>
-        <div class="effect-display-container">
-            <div id="effect-display" class="effect-text"></div>
+
+        <div id="unrecorded" class="tab-content">
+            <h2>未記錄的寶石組合</h2>
+            <div class="combinations-grid" id="unrecorded-combinations-grid">
+                </div>
+        </div>
+
+        <div id="recorded" class="tab-content">
+            <h2>已記錄的寶石組合</h2>
+            <div class="combinations-grid" id="recorded-combinations-grid">
+                </div>
         </div>
     </div>
     <script src="script.js"></script>

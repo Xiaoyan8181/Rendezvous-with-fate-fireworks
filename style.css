@@ -1,6 +1,6 @@
 body {
-    background-color: #000; /* 黑色背景 */
-    color: #fff; /* 白色文字 */
+    background-color: #000;
+    color: #fff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
@@ -21,12 +21,50 @@ body {
     max-width: 800px;
 }
 
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+}
+
+.tab-button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 5px 5px 0 0;
+    transition: background-color 0.3s ease;
+    margin: 0 5px;
+}
+
+.tab-button:hover {
+    background-color: #555;
+}
+
+.tab-button.active {
+    background-color: #00ffff;
+    color: #1a1a1a;
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+    padding-top: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 .gem-slots-container {
     display: flex;
     justify-content: center;
     gap: 20px;
     margin-bottom: 40px;
-    min-height: 120px; /* 確保有足夠的高度，即使沒有寶石 */
+    min-height: 120px;
     align-items: center;
 }
 
@@ -40,19 +78,20 @@ body {
     align-items: center;
     background-color: #333;
     cursor: pointer;
-    overflow: hidden; /* 防止圖片溢出 */
+    overflow: hidden;
 }
 
 .gem-slot img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* 保持圖片比例 */
+    object-fit: contain;
     transition: transform 0.2s ease-in-out;
 }
 
 .gem-slot img:hover {
     transform: scale(1.05);
 }
+
 
 .gem-selection {
     display: flex;
@@ -77,66 +116,270 @@ body {
 }
 
 .effect-display-container {
-    min-height: 150px; /* 確保顯示區域足夠，避免內容跳動 */
+    min-height: 150px;
     background-color: #222;
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #444;
     text-align: left;
-    overflow: auto; /* 如果內容過多可以滾動 */
+    overflow: auto;
+    margin-bottom: 20px;
 }
 
 .effect-text {
     font-size: 1.2em;
     line-height: 1.8;
-    opacity: 0; /* 初始不可見 */
-    transition: opacity 1.5s ease-in-out; /* 漸入動畫 */
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
 }
 
 .effect-text.show {
-    opacity: 1; /* 顯示時透明度為1 */
+    opacity: 1;
 }
 
-/* 寶石組合名稱顏色 */
 .effect-name-green {
-    color: #00ff00; /* 組合名稱為綠色 */
+    color: #00ff00;
 }
 
 .effect-name-white {
-    color: #ffffff; /* 單一寶石效果名稱為白色 */
+    color: #ffffff;
 }
 
-/* 疊加次數前綴顏色 */
 .effect-prefix-white {
-    color: #ffffff; /* 預設白色 (1次疊加) */
+    color: #ffffff;
 }
 
 .effect-prefix-green {
-    color: #00ff00; /* 綠色 (2次疊加) */
+    color: #00ff00;
 }
 
 .effect-prefix-orange {
-    color: #ffa500; /* 橙色 (3次疊加) */
+    color: #ffa500;
 }
 
-/* 效果描述文字顏色 */
 .effect-description-white {
-    color: #ffffff; /* 描述文字為白色 */
+    color: #ffffff;
 }
 
-/* 詞條顏色 */
 .term-red {
-    color: #ff3333; /* 紅色詞條 */
+    color: #ff3333;
 }
 
 .term-yellow {
-    color: #ffff33; /* 黃色詞條 */
+    color: #ffff33;
 }
 
 .term-blue {
-    color: #3399ff; /* 藍色詞條 */
+    color: #3399ff;
 }
 
 .term-purple {
-    color: #9933ff; /* 紫色詞條 */
+    color: #9933ff;
+}
+
+.record-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.record-button:hover {
+    background-color: #0056b3;
+}
+
+.record-button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.record-button.recorded {
+    background-color: #00ff00;
+    color: #1a1a1a;
+}
+
+.record-button.recorded:hover {
+    background-color: #00cc00;
+}
+
+.record-button.unrecorded {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.record-button.unrecorded:hover {
+    background-color: #0056b3;
+}
+
+
+.combinations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.combination-card {
+    background-color: #222;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.combination-card:hover {
+    transform: translateY(-5px);
+}
+
+@keyframes fade-out-animation {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+.card-fading-out {
+    animation: fade-out-animation 0.3s ease-out forwards;
+}
+
+
+.combination-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+    flex-grow: 1; /* Allow wrapper to grow */
+}
+
+.recorded-gem-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #444;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+    margin-bottom: 5px;
+}
+
+.recorded-gem-circle img {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    transition: all 0.3s ease;
+    object-fit: contain;
+}
+
+@keyframes move-up-down {
+    50% { transform: translateX(-50%) translateY(-3px); }
+}
+@keyframes move-right-left {
+    50% { transform: translateY(-50%) rotate(90deg) translateY(-3px); }
+}
+@keyframes move-down-up {
+    50% { transform: translateX(-50%) rotate(180deg) translateY(-3px); }
+}
+@keyframes move-left-right {
+    50% { transform: translateY(-50%) rotate(-90deg) translateY(-3px); } /* 將 3px 改為 -3px */
+}
+
+.recorded-gem-circle img.gem-top {
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: move-up-down 5s ease-in-out infinite;
+}
+
+.recorded-gem-circle img.gem-right {
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%) rotate(90deg);
+    animation: move-right-left 5s ease-in-out infinite;
+}
+
+.recorded-gem-circle img.gem-bottom {
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg);
+    animation: move-down-up 5s ease-in-out infinite;
+}
+
+.recorded-gem-circle img.gem-left {
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%) rotate(-90deg);
+    animation: move-left-right 5s ease-in-out infinite;
+}
+
+
+.recorded-combination-text {
+    color: #fff;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    word-break: break-all;
+    margin-top: 5px;
+}
+
+.combination-description {
+    font-size: 0.85em;
+    color: #ccc;
+    margin-top: 8px;
+    width: 100%;
+    word-break: break-word;
+    text-align: left;
+    line-height: 1.5;
+}
+
+
+.combination-card .record-button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    width: calc(100% - 30px);
+    box-sizing: border-box;
+}
+
+.combination-card .cancel-record-button {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+    margin-top: 15px;
+    width: calc(100% - 30px);
+    box-sizing: border-box;
+}
+
+.combination-card .cancel-record-button:hover {
+    background-color: #c82333;
+}
+
+.combination-card .recorded-status {
+    color: #00ff00;
+    font-weight: bold;
+    margin-top: 15px;
+}
+
+.combination-card .record-button:disabled {
+    background-color: #007bff;
+    cursor: pointer;
 }

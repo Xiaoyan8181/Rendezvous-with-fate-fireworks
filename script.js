@@ -2,10 +2,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const gemSlots = document.querySelectorAll('.gem-slot');
     const gemOptions = document.querySelectorAll('.gem-option');
     const effectDisplay = document.getElementById('effect-display');
+    const recordCombinationBtn = document.getElementById('record-combination-btn');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const unrecordedCombinationsGrid = document.getElementById('unrecorded-combinations-grid');
+    const recordedCombinationsGrid = document.getElementById('recorded-combinations-grid');
 
-    let currentGems = Array(4).fill(null); // 用於儲存當前槽位中的寶石，null 表示空
+    let currentGems = Array(4).fill(null);
+    let recordedCombinations = new Set(JSON.parse(localStorage.getItem('recordedCombinations') || '[]'));
 
-    // 定義詞條及其對應的顏色類別
     const termColors = {
         '點燃': 'term-red',
         '斬裂': 'term-red',
@@ -26,10 +31,127 @@ document.addEventListener('DOMContentLoaded', () => {
         '變萌': 'term-purple'
     };
 
-    // 初始化顯示效果
-    updateEffectDisplay();
+    const gemOrder = { 'R': 1, 'Y': 2, 'B': 3, 'P': 4 };
 
-    // 點擊寶石選項
+    function getSortedGemsString(gemsArray) {
+        return [...gemsArray].sort((a, b) => gemOrder[a] - gemOrder[b]).join('');
+    }
+
+    const allPossibleCombinations = [
+        { name: '皇家聖焰', type: 'unique4', gems: ['R', 'Y', 'B', 'P'] },
+        { name: '極彩輝煌', type: 'unique1', gems: ['R', 'R', 'R', 'R'] },
+        { name: '極彩輝煌', type: 'unique1', gems: ['Y', 'Y', 'Y', 'Y'] },
+        { name: '極彩輝煌', type: 'unique1', gems: ['B', 'B', 'B', 'B'] },
+        { name: '極彩輝煌', type: 'unique1', gems: ['P', 'P', 'P', 'P'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['R', 'R', 'Y', 'Y'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['R', 'R', 'B', 'B'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['R', 'R', 'P', 'P'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['Y', 'Y', 'B', 'B'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['Y', 'Y', 'P', 'P'] },
+        { name: '二重幻華', type: 'two_pairs', gems: ['B', 'B', 'P', 'P'] },
+        { name: '月映星輝', type: 'three_one', gems: ['R', 'R', 'R', 'Y'] },
+        { name: '月映星輝', type: 'three_one', gems: ['R', 'R', 'R', 'B'] },
+        { name: '月映星輝', type: 'three_one', gems: ['R', 'R', 'R', 'P'] },
+        { name: '月映星輝', type: 'three_one', gems: ['Y', 'Y', 'Y', 'R'] },
+        { name: '月映星輝', type: 'three_one', gems: ['Y', 'Y', 'Y', 'B'] },
+        { name: '月映星輝', type: 'three_one', gems: ['Y', 'Y', 'Y', 'P'] },
+        { name: '月映星輝', type: 'three_one', gems: ['B', 'B', 'B', 'R'] },
+        { name: '月映星輝', type: 'three_one', gems: ['B', 'B', 'B', 'Y'] },
+        { name: '月映星輝', type: 'three_one', gems: ['B', 'B', 'B', 'P'] },
+        { name: '月映星輝', type: 'three_one', gems: ['P', 'P', 'P', 'R'] },
+        { name: '月映星輝', type: 'three_one', gems: ['P', 'P', 'P', 'Y'] },
+        { name: '月映星輝', type: 'three_one', gems: ['P', 'P', 'P', 'B'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['R', 'R', 'Y', 'B'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['R', 'R', 'Y', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['R', 'R', 'B', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['Y', 'Y', 'R', 'B'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['Y', 'Y', 'R', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['Y', 'Y', 'B', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['B', 'B', 'R', 'Y'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['B', 'B', 'R', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['B', 'B', 'Y', 'P'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['P', 'P', 'R', 'Y'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['P', 'P', 'R', 'B'] },
+        { name: '星屑幽光', type: 'two_one_one', gems: ['P', 'P', 'Y', 'B'] }
+    ];
+
+    const combinationMap = new Map();
+    allPossibleCombinations.forEach(combo => {
+        const sortedKey = getSortedGemsString(combo.gems);
+        combo.sortedGems = sortedKey;
+        combinationMap.set(sortedKey, combo);
+    });
+
+    const combinationDescriptions = {
+        'RYBP': '我方全體所有機率觸發機制機率+10%',
+        'RRRR': '所有紅卡所需費用-1',
+        'YYYY': '手牌上限+3張',
+        'BBBB': '打出藍卡後，我方全體攻擊力+0.5%，上限50%',
+        'PPPP': '所有紫卡所需費用-1',
+        'RRYY': '每10秒觸發1次，從牌庫或棄牌區將1張紅卡加入手牌',
+        'RRBB': '我方全體【爆炸物】/【機械單位】造成的傷害提高50%',
+        'RRPP': '我方全體造成的最終傷害提高25%',
+        'YYBB': '每10秒觸發1次，從牌庫或棄牌區將1張藍卡加入手牌',
+        'YYPP': '手牌補充冷卻時間縮短1秒',
+        'BBPP': '我方全體受到的最終傷害降低25%',
+        'RRRY': '我方全體造成的燃燒傷害提高33%',
+        'RRRB': '我方全體造成的物理傷害提高33%',
+        'RRRP': '我方全體造成的混響傷害提高33%',
+        'RYYY': '我方全體造成的電磁傷害提高33%',
+        'YYYB': '我方全體造成的負能傷害提高33%',
+        'YYYP': '每秒獲得0.33費用',
+        'RBBB': '我方全體造成的冰凍傷害提高33%',
+        'YBBB': '所有藍卡所需費用-2',
+        'BBBP': '打出藍卡後，我方全體防禦力+0.5%，上限50%',
+        'RPPP': '【暗藝】/【至暗時刻】傷害提高50%',
+        'YPPP': '我方全體【使魔】造成的傷害提高50%',
+        'BPPP': '【新星】/【元素新星】/【超新星】傷害提高50%',
+        'RRYB': '我方全體【普通攻擊】傷害提高50%', // KEY 修正 (原 RRBY)
+        'RRYP': '我方全體【普通攻擊】有15%機率觸發【點燃】',
+        'RRBP': '對處於【凍結】/【冰封】狀態下的敵方，【斬裂】額外觸發1次',
+        'RYYB': '我方全體5費及以上的技能牌所需費用-2', // KEY 修正 (原 RBYY)
+        'RYYP': '我方全體【普通攻擊】有15%機率觸發【引雷】',
+        'YYBP': '我方全體【霸體】/【隱形】/【無敵】的持續時間延長2秒',
+        'RYBB': '我方【護盾】的持續時間延長20秒', // KEY 修正 (原 RBBY)
+        'RBBP': '我方全體【普通攻擊】有15%機率觸發【凍結】',
+        'YBBP': '我方【護盾】消失或引爆時，回復持有者15%生命值',
+        'RYPP': '我方全體【波】/【蝕滅】/【裂蝕】造成的傷害提高50%',
+        'RBPP': '我方全體免疫【混亂】/【束縛】/【禁錮】/【詛咒】/【昏睡】/【變萌】',
+        'YBPP': '【棄牌】指令冷卻時間縮短5秒'
+    };
+    
+    updateEffectDisplay();
+    switchTab('combination-query');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+            switchTab(tabId);
+        });
+    });
+
+    function switchTab(tabId) {
+        tabButtons.forEach(button => {
+            button.classList.remove('active');
+            if (button.dataset.tab === tabId) {
+                button.classList.add('active');
+            }
+        });
+
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === tabId) {
+                content.classList.add('active');
+            }
+        });
+
+        if (tabId === 'unrecorded') {
+            displayUnrecordedCombinations();
+        } else if (tabId === 'recorded') {
+            displayRecordedCombinations();
+        }
+    }
+
     gemOptions.forEach(option => {
         option.addEventListener('click', (event) => {
             const gemType = event.target.dataset.gem;
@@ -37,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 點擊寶石槽位
     gemSlots.forEach(slot => {
         slot.addEventListener('click', (event) => {
             const index = parseInt(slot.dataset.index);
@@ -45,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 將寶石添加到空位
     function addGemToSlot(gemType) {
         const emptySlotIndex = currentGems.findIndex(gem => gem === null);
         if (emptySlotIndex !== -1) {
@@ -55,74 +175,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 從空位中移除寶石
     function removeGemFromSlot(index) {
         if (currentGems[index] !== null) {
             currentGems[index] = null;
-            // 將後面的寶石往前移，保持從左到右排列
             for (let i = index; i < currentGems.length - 1; i++) {
                 currentGems[i] = currentGems[i + 1];
             }
-            currentGems[currentGems.length - 1] = null; // 最後一個位置設為空
+            currentGems[currentGems.length - 1] = null;
             renderGems();
             updateEffectDisplay();
         }
     }
 
-    // 渲染寶石到頁面上
     function renderGems() {
         gemSlots.forEach((slot, index) => {
-            slot.innerHTML = ''; // 清空槽位
+            slot.innerHTML = '';
             if (currentGems[index]) {
                 const img = document.createElement('img');
-                img.src = `images/${currentGems[index]}.png`; // 修改圖片路徑
+                img.src = `images/${currentGems[index]}.png`;
                 img.alt = `${currentGems[index]}寶石`;
                 slot.appendChild(img);
             }
         });
+        updateRecordButtonState();
     }
 
-    // 將詞條加上顏色樣式
+    function updateRecordButtonState() {
+        const filledGems = currentGems.filter(gem => gem !== null);
+        if (filledGems.length === 4) {
+            const sortedCurrentGems = getSortedGemsString(filledGems);
+            const isRecorded = recordedCombinations.has(sortedCurrentGems);
+
+            recordCombinationBtn.style.display = 'block';
+            recordCombinationBtn.textContent = isRecorded ? '已記錄' : '未記錄';
+            recordCombinationBtn.classList.toggle('recorded', isRecorded);
+            recordCombinationBtn.classList.toggle('unrecorded', !isRecorded);
+            recordCombinationBtn.onclick = () => toggleRecordState(sortedCurrentGems);
+        } else {
+            recordCombinationBtn.style.display = 'none';
+        }
+    }
+
+    function toggleRecordState(sortedGemsString) {
+        if (recordedCombinations.has(sortedGemsString)) {
+            recordedCombinations.delete(sortedGemsString);
+        } else {
+            recordedCombinations.add(sortedGemsString);
+        }
+        localStorage.setItem('recordedCombinations', JSON.stringify(Array.from(recordedCombinations)));
+        
+        displayUnrecordedCombinations();
+        displayRecordedCombinations();
+        updateRecordButtonState();
+    }
+
     function applyTermColors(text) {
         let coloredText = text;
         for (const term in termColors) {
-            // 使用正則表達式進行全局替換，並處理可能出現的特殊字符
-            // 這裡使用 lookbehind 來確保只匹配【term】而不是其他包含term的字串
             const regex = new RegExp(`(?<!<span class=".*">)【${term}】`, 'g');
             coloredText = coloredText.replace(regex, `<span class="${termColors[term]}">【${term}】</span>`);
         }
         return coloredText;
     }
 
-    // 更新效果顯示
     function updateEffectDisplay() {
-        // 先移除舊的顯示，讓動畫重新觸發
         effectDisplay.classList.remove('show');
         effectDisplay.innerHTML = '';
 
-        setTimeout(() => { // 稍微延遲以確保動畫重置
+        setTimeout(() => {
             const effects = calculateEffects(currentGems);
             if (effects.length === 0) {
                 effectDisplay.innerHTML = '無效果';
             } else {
                 effectDisplay.innerHTML = effects.map(effectData => {
                     const { text, prefixColorClass } = effectData;
-                    // 統一解析格式：【名稱】描述 或 【名稱】 (如果沒有描述)
                     const match = text.match(/^【([^】]+?)】(.*)$/);
-                    let name = '';
-                    let description = '';
                     let nameHtml = '';
                     let descriptionHtml = '';
 
                     if (match) {
-                        name = match[1]; // 提取括號內的名稱
-                        description = match[2]; // 提取括號後的描述
+                        const name = match[1];
+                        const description = match[2];
 
-                        // 未滿4個寶石的單一效果名稱，使用動態前綴顏色
                         if (['血盟', '窺兆', '靜域', '幽冥'].includes(name)) {
                              nameHtml = `<span class="${prefixColorClass}">【${name}】</span>`;
                         } else {
-                            // 其他滿4個寶石的組合名稱維持綠色
                             nameHtml = `<span class="effect-name-green">【${name}】</span>`;
                         }
                         descriptionHtml = `<span class="effect-description-white">${applyTermColors(description)}</span>`;
@@ -130,19 +267,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         return nameHtml + descriptionHtml;
 
                     } else if (text.startsWith('【') && text.endsWith('】')) {
-                        // 這是單純的組合名稱，例如【極彩輝煌】或【月映星輝】，沒有後續描述
                         return `<span class="effect-name-green">${text}</span>`;
                     } else {
-                        // 理論上這個分支不應該再被觸發，因為所有效果都應該有【】前綴或被併入前一個
                         return `<span class="effect-description-white">${applyTermColors(text)}</span>`;
                     }
-                }).join('<br>'); // 每個效果之間用 <br> 分隔
+                }).join('<br>');
             }
             effectDisplay.classList.add('show');
-        }, 100); // 短暫延遲
+        }, 100);
     }
-
-    // 計算寶石組合效果
+    
     function calculateEffects(gems) {
         const filledGems = gems.filter(gem => gem !== null);
         const gemCounts = {};
@@ -154,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const effects = [];
 
         if (numFilled < 4) {
-            // 寶石未滿4個，疊加處理
             const pushEffect = (gemType, baseName, baseDescription, valueKey, baseValue) => {
                 if (gemCounts[gemType]) {
                     let currentDescription = baseDescription;
@@ -176,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentDescription = baseDescription.replace('5%', `${currentValue}%`);
                     }
 
-                    // 確保返回的文本是 【名稱】描述 的統一格式
                     effects.push({ text: `【${baseName}】${currentDescription}`, prefixColorClass });
                 }
             };
@@ -187,138 +319,169 @@ document.addEventListener('DOMContentLoaded', () => {
             pushEffect('P', '幽冥', '所有紫卡傷害提高10%', 'damage', 10);
 
         } else {
-            // 寶石滿4個
-            const uniqueGemTypes = Object.keys(gemCounts).length;
-            const sortedCounts = Object.values(gemCounts).sort((a, b) => b - a);
+            const sortedCurrentGemsString = getSortedGemsString(filledGems);
+            const foundCombination = combinationMap.get(sortedCurrentGemsString);
 
-            // 輔助函式，統一推送格式
-            const addCombinationEffect = (name, description = '') => {
-                // 如果是第二行的描述，name會是空字串，我們不加【】
-                const displayText = name ? `【${name}】${description}` : description;
-                effects.push({ text: displayText, prefixColorClass: 'effect-name-green' });
-            };
-
-            if (uniqueGemTypes === 4) {
-                // 4色各1
-                addCombinationEffect('皇家聖焰', '我方全體所有機率觸發機制機率+10%');
-            } else if (uniqueGemTypes === 1) {
-                // 4個同色
-                const type = filledGems[0];
-                addCombinationEffect('極彩輝煌'); // 主名稱，無描述
-                if (type === 'R') addCombinationEffect('', '所有紅卡所需費用-1'); // 描述
-                else if (type === 'Y') addCombinationEffect('', '手牌上限+3張');
-                else if (type === 'B') addCombinationEffect('', '打出藍卡後，我方全體攻擊力+0.5%，上限50%');
-                else if (type === 'P') addCombinationEffect('', '所有紫卡所需費用-1');
-            } else if (uniqueGemTypes === 2 && sortedCounts[0] === 3) {
-                // 3個同色1個不同色
-                const threeGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 3);
-                const oneGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 1);
-                addCombinationEffect('月映星輝'); // 主名稱，無描述
-
-                if (threeGem === 'R') {
-                    if (oneGem === 'Y') addCombinationEffect('', '我方全體造成的火焰傷害提高33%');
-                    else if (oneGem === 'B') addCombinationEffect('', '我方全體造成的物理傷害提高33%');
-                    else if (oneGem === 'P') addCombinationEffect('', '我方全體造成的混響傷害提高33%');
-                } else if (threeGem === 'Y') {
-                    if (oneGem === 'R') addCombinationEffect('', '我方全體造成的電磁傷害提高33%');
-                    else if (oneGem === 'B') addCombinationEffect('', '我方全體造成的負能傷害提高33%');
-                    else if (oneGem === 'P') addCombinationEffect('', '每秒獲得0.33費用');
-                } else if (threeGem === 'B') {
-                    if (oneGem === 'R') addCombinationEffect('', '我方全體造成的冰凍傷害提高33%');
-                    else if (oneGem === 'Y') addCombinationEffect('', '所有藍卡所需費用-2');
-                    else if (oneGem === 'P') addCombinationEffect('', '打出藍卡後，我方全體防禦力+0.5%，上限50%');
-                } else if (threeGem === 'P') {
-                    if (oneGem === 'R') addCombinationEffect('', '【暗藝】/【至暗時刻】傷害提高50%');
-                    else if (oneGem === 'Y') addCombinationEffect('', '我方全體【使魔】造成的傷害提高50%');
-                    else if (oneGem === 'B') addCombinationEffect('', '【新星】/【元素新星】/【超新星】傷害提高50%');
-                }
-            } else if (uniqueGemTypes === 3 && sortedCounts[0] === 2) {
-                // 2個同色剩下2個皆不同色 (2+1+1)
-                const twoGem = Object.keys(gemCounts).find(gem => gemCounts[gem] === 2);
-                const oneGems = Object.keys(gemCounts).filter(gem => gemCounts[gem] === 1).sort();
-                addCombinationEffect('星屑幽光'); // 主名稱，無描述
-
-                const combination = twoGem + oneGems.join('');
-
-                switch (combination) {
-                    case 'RBY':
-                    case 'RYB':
-                        addCombinationEffect('', '我方全體【普通攻擊】傷害提高50%');
-                        break;
-                    case 'RPY':
-                    case 'RYP':
-                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【點燃】');
-                        break;
-                    case 'RBP':
-                    case 'RPB':
-                        addCombinationEffect('', '對處於【凍結】/【冰封】狀態下的敵方，【斬裂】額外觸發1次');
-                        break;
-                    case 'YRB':
-                    case 'YBR':
-                        addCombinationEffect('', '我方全體5費及以上的技能牌所需費用-2');
-                        break;
-                    case 'YRP':
-                    case 'YPR':
-                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【引雷】');
-                        break;
-                    case 'YBP':
-                    case 'YPB':
-                        addCombinationEffect('', '我方全體【霸體】/【隱形】/【無敵】的持續時間延長2秒');
-                        break;
-                    case 'BRY':
-                    case 'BYR':
-                        addCombinationEffect('', '我方【護盾】的持續時間延長20秒');
-                        break;
-                    case 'BRP':
-                    case 'BPR':
-                        addCombinationEffect('', '我方全體【普通攻擊】有15%機率觸發【凍結】');
-                        break;
-                    case 'BYP':
-                    case 'BPY':
-                        addCombinationEffect('', '我方【護盾】消失或引爆時，回復持有者15%生命值');
-                        break;
-                    case 'PRY':
-                    case 'PYR':
-                        addCombinationEffect('', '我方全體【波】/【蝕滅】/【裂蝕】造成的傷害提高50%');
-                        break;
-                    case 'PRB':
-                    case 'PBR':
-                        addCombinationEffect('', '我方全體免疫【混亂】/【束縛】/【禁錮】/【詛咒】/【昏睡】/【變萌】');
-                        break;
-                    case 'PYB':
-                    case 'PBY':
-                        addCombinationEffect('', '【棄牌】指令冷卻時間縮短5秒');
-                        break;
-                }
-
-            } else if (uniqueGemTypes === 2 && sortedCounts[0] === 2 && sortedCounts[1] === 2) {
-                // 2組同色 (2+2)
-                const [gem1, gem2] = Object.keys(gemCounts).sort(); // 確保字母順序
-                addCombinationEffect('二重幻華'); // 主名稱，無描述
-
-                const combination = gem1 + gem2; // ombination 總是按字母順序
-                switch (combination) {
-                    case 'BR':
-                        addCombinationEffect('', '我方全體【爆炸物】/【機械單位】造成的傷害提高50%');
-                        break;
-                    case 'PR':
-                        addCombinationEffect('', '我方全體造成的最終傷害提高25%');
-                        break;
-                    case 'RY':
-                        addCombinationEffect('', '每10秒觸發1次，從牌庫或棄牌區將1張紅卡加入手牌');
-                        break;
-                    case 'BY':
-                        addCombinationEffect('', '每10秒觸發1次，從牌庫或棄牌區將1張藍卡加入手牌');
-                        break;
-                    case 'PY':
-                        addCombinationEffect('', '手牌補充冷卻時間縮短1秒');
-                        break;
-                    case 'BP':
-                        addCombinationEffect('', '我方全體受到的最終傷害降低25%');
-                        break;
-                }
+            if (foundCombination) {
+                 const description = combinationDescriptions[foundCombination.sortedGems] || '';
+                 effects.push({ text: `【${foundCombination.name}】${description}`, prefixColorClass: 'effect-name-green'});
             }
         }
         return effects;
     }
+
+    function getVisualGemsForCombinationCard(gemsArray) {
+        const gemCounts = {};
+        gemsArray.forEach(gem => { gemCounts[gem] = (gemCounts[gem] || 0) + 1; });
+
+        const uniqueGemTypes = Object.keys(gemCounts).length;
+        const visualGems = Array(4).fill(null);
+
+        const sortedGemTypesByCount = Object.keys(gemCounts).sort((a, b) => {
+            if (gemCounts[a] !== gemCounts[b]) {
+                return gemCounts[b] - gemCounts[a];
+            }
+            return gemOrder[a] - gemOrder[b];
+        });
+
+        if (uniqueGemTypes === 4) {
+            visualGems[0] = 'R';
+            visualGems[1] = 'Y';
+            visualGems[2] = 'B';
+            visualGems[3] = 'P';
+        } else if (uniqueGemTypes === 1) {
+            const gemType = gemsArray[0];
+            visualGems[0] = gemType;
+            visualGems[1] = gemType;
+            visualGems[2] = gemType;
+            visualGems[3] = gemType;
+        } else if (uniqueGemTypes === 2 && gemCounts[sortedGemTypesByCount[0]] === 3) {
+            const threeGem = sortedGemTypesByCount[0];
+            const oneGem = sortedGemTypesByCount[1];
+
+            visualGems[0] = threeGem;
+            visualGems[1] = threeGem;
+            visualGems[2] = threeGem;
+            visualGems[3] = oneGem;
+        } else if (uniqueGemTypes === 2 && gemCounts[sortedGemTypesByCount[0]] === 2 && gemCounts[sortedGemTypesByCount[1]] === 2) {
+            const gemA = sortedGemTypesByCount[0];
+            const gemB = sortedGemTypesByCount[1];
+
+            visualGems[0] = gemA;
+            visualGems[1] = gemA;
+            visualGems[2] = gemB;
+            visualGems[3] = gemB;
+        } else if (uniqueGemTypes === 3 && gemCounts[sortedGemTypesByCount[0]] === 2) {
+            const twoGem = sortedGemTypesByCount[0];
+            const oneGem1 = sortedGemTypesByCount[1];
+            const oneGem2 = sortedGemTypesByCount[2];
+
+            visualGems[0] = twoGem;
+            visualGems[1] = twoGem;
+            visualGems[2] = oneGem1;
+            visualGems[3] = oneGem2;
+        }
+        return visualGems.filter(gem => gem !== null);
+    }
+
+    function createCombinationCard(originalGems, name, description, isRecorded) {
+        const card = document.createElement('div');
+        card.classList.add('combination-card');
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.classList.add('combination-content-wrapper');
+
+        const gemCircle = document.createElement('div');
+        gemCircle.classList.add('recorded-gem-circle');
+
+        const visualGems = getVisualGemsForCombinationCard(originalGems);
+
+        const positions = ['top', 'right', 'bottom', 'left'];
+        visualGems.forEach((gemType, index) => {
+            const img = document.createElement('img');
+            img.src = `images/${gemType}.png`;
+            img.alt = `${gemType}寶石`;
+            img.classList.add(`gem-${positions[index]}`);
+            gemCircle.appendChild(img);
+        });
+
+
+        const nameElement = document.createElement('div');
+        nameElement.classList.add('recorded-combination-text');
+        nameElement.textContent = name;
+
+        const descriptionElement = document.createElement('div');
+        descriptionElement.classList.add('combination-description');
+        descriptionElement.innerHTML = applyTermColors(description);
+
+        contentWrapper.appendChild(gemCircle);
+        contentWrapper.appendChild(nameElement);
+        contentWrapper.appendChild(descriptionElement);
+        card.appendChild(contentWrapper);
+        
+        const sortedGemsString = getSortedGemsString(originalGems);
+
+        if (!isRecorded) {
+            const recordButton = document.createElement('button');
+            recordButton.classList.add('record-button');
+            recordButton.textContent = '記錄';
+            recordButton.addEventListener('click', () => {
+                // 觸發淡出動畫
+                card.classList.add('card-fading-out');
+                
+                // 延遲0.3秒後再更新列表
+                setTimeout(() => {
+                    recordedCombinations.add(sortedGemsString);
+                    localStorage.setItem('recordedCombinations', JSON.stringify(Array.from(recordedCombinations)));
+                    displayUnrecordedCombinations();
+                    displayRecordedCombinations();
+                    updateRecordButtonState();
+                }, 300);
+            });
+            card.appendChild(recordButton);
+        } else {
+            const cancelButton = document.createElement('button');
+            cancelButton.classList.add('cancel-record-button');
+            cancelButton.textContent = '取消記錄';
+            cancelButton.addEventListener('click', () => {
+                // 觸發淡出動畫
+                card.classList.add('card-fading-out');
+
+                // 延遲0.3秒後再更新列表
+                setTimeout(() => {
+                    recordedCombinations.delete(sortedGemsString);
+                    localStorage.setItem('recordedCombinations', JSON.stringify(Array.from(recordedCombinations)));
+                    displayUnrecordedCombinations();
+                    displayRecordedCombinations();
+                    updateRecordButtonState();
+                }, 300);
+            });
+            card.appendChild(cancelButton);
+        }
+
+        return card;
+    }
+
+
+    function displayUnrecordedCombinations() {
+        unrecordedCombinationsGrid.innerHTML = '';
+        const unrecorded = allPossibleCombinations.filter(combo => !recordedCombinations.has(combo.sortedGems));
+        unrecorded.forEach(combo => {
+            const description = combinationDescriptions[combo.sortedGems] || '';
+            const card = createCombinationCard(combo.gems, combo.name, description, false);
+            unrecordedCombinationsGrid.appendChild(card);
+        });
+    }
+
+    function displayRecordedCombinations() {
+        recordedCombinationsGrid.innerHTML = '';
+        const recorded = allPossibleCombinations.filter(combo => recordedCombinations.has(combo.sortedGems));
+        recorded.forEach(combo => {
+            const description = combinationDescriptions[combo.sortedGems] || '';
+            const card = createCombinationCard(combo.gems, combo.name, description, true);
+            recordedCombinationsGrid.appendChild(card);
+        });
+    }
+
+    renderGems();
 });
